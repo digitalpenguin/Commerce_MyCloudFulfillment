@@ -3,6 +3,7 @@ namespace DigitalPenguin\MyCloudFulfillment\Modules;
 
 use modmore\Commerce\Admin\Configuration\About\ComposerPackages;
 use modmore\Commerce\Admin\Sections\SimpleSection;
+use modmore\Commerce\Admin\Widgets\Form\CheckboxField;
 use modmore\Commerce\Admin\Widgets\Form\DescriptionField;
 use modmore\Commerce\Admin\Widgets\Form\PasswordField;
 use modmore\Commerce\Admin\Widgets\Form\SectionField;
@@ -51,43 +52,55 @@ class MyCloudFulfillment extends BaseModule {
 
     public function getModuleConfiguration(\comModule $module)
     {
-        $apiKey = $module->getProperty('apikey', '');
-        $secretKey = $module->getProperty('secretkey', '');
-
         $fields = [];
 
         $fields[] = new SectionField($this->commerce, [
-            'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.test_mode'),
-            'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.test_mode_desc'),
+            'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.use_test_account'),
+            'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.use_test_account.description'),
         ]);
-        $fields[] = new TextField($this->commerce, [
-            'name' => 'properties[apikey]',
-            'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.api_key'),
-            'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.api_key_desc'),
-            'value' => $apiKey
-        ]);
-        $fields[] = new PasswordField($this->commerce, [
-            'name' => 'properties[secretkey]',
-            'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.secret_key'),
-            'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.secret_key_desc'),
-            'value' => $secretKey
+        // Checkbox to enable test account keys and endpoints
+        $fields[] = new CheckboxField($this->commerce, [
+            'name' => 'properties[usetestaccount]',
+            'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.use_test_account'),
+            'value' => $module->getProperty('usetestaccount', '')
         ]);
 
+        // Test account fields will only appear if checkbox above is selected and saved.
+        if(in_array($module->getProperty('usetestaccount'), [1, true, 'on'])) {
+            $fields[] = new SectionField($this->commerce, [
+                'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.test_mode'),
+                'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.test_mode_desc'),
+            ]);
+            $fields[] = new TextField($this->commerce, [
+                'name' => 'properties[testapikey]',
+                'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.api_key'),
+                'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.api_key_desc'),
+                'value' => $module->getProperty('testapikey', '')
+            ]);
+            $fields[] = new PasswordField($this->commerce, [
+                'name' => 'properties[testsecretkey]',
+                'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.secret_key'),
+                'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.secret_key_desc'),
+                'value' => $module->getProperty('testsecretkey', '')
+            ]);
+        }
+
+        // Live account fields are always visible
         $fields[] = new SectionField($this->commerce, [
             'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.live_mode'),
             'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.live_mode_desc'),
         ]);
         $fields[] = new TextField($this->commerce, [
-            'name' => 'properties[apikey]',
+            'name' => 'properties[liveapikey]',
             'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.api_key'),
             'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.api_key_desc'),
-            'value' => $apiKey
+            'value' => $module->getProperty('liveapikey', '')
         ]);
         $fields[] = new PasswordField($this->commerce, [
-            'name' => 'properties[secretkey]',
+            'name' => 'properties[livesecretkey]',
             'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.secret_key'),
             'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.secret_key_desc'),
-            'value' => $secretKey
+            'value' => $module->getProperty('livesecretkey', '')
         ]);
 
         return $fields;
