@@ -1,6 +1,7 @@
 <?php
 namespace DigitalPenguin\MyCloudFulfillment\Modules;
 
+use DigitalPenguin\MyCloudFulfillment\API\APIClient;
 use modmore\Commerce\Admin\Configuration\About\ComposerPackages;
 use modmore\Commerce\Admin\Sections\SimpleSection;
 use modmore\Commerce\Admin\Widgets\Form\CheckboxField;
@@ -41,16 +42,26 @@ class MyCloudFulfillment extends BaseModule {
         $path = $root . '/model/';
         $this->adapter->loadPackage('commerce_mycloudfulfillment', $path);
 
-        // Add template path to twig
-//        $root = dirname(__DIR__, 2);
-//        $this->commerce->view()->addTemplatesPath($root . '/templates/');
-
         // Add composer libraries to the about section (v0.12+)
-        $dispatcher->addListener(\Commerce::EVENT_DASHBOARD_LOAD_ABOUT, [$this, 'addLibrariesToAbout']);
+        //$dispatcher->addListener(\Commerce::EVENT_DASHBOARD_LOAD_ABOUT, [$this, 'addLibrariesToAbout']);
     }
 
     public function getModuleConfiguration(\comModule $module)
     {
+        // Test API token
+        if(in_array($module->getProperty('usetestaccount'), [1, true, 'on'])) {
+            $apiClient = new APIClient($this->commerce->isTestMode());
+        } else {
+            $apiClient = new APIClient();
+        }
+
+        $response = $apiClient->authenticate($module->getProperty('liveapikey'),$module->getProperty('livesecretkey'));
+        $data = $response->getData();
+
+        $this->commerce->modx->log(1,print_r($data,true));
+
+        //$apiClient->request('/orders')$data['token'];
+
         $fields = [];
 
         $fields[] = new SectionField($this->commerce, [

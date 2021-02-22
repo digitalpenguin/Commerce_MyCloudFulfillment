@@ -1,4 +1,4 @@
-MyCloudFulfillment for Commerce 0.1.0-pl
+MyCloudFulfillment for Commerce 1.0.0-rc1
 ---------------------------------
 Released on
 

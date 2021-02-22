@@ -3,7 +3,7 @@ require_once strtr(realpath(dirname(dirname(__FILE__))), '\\', '/') . '/mycloudf
 /**
  * MyCloudFulfillment for Commerce.
  *
- * Copyright 2020 by Your Name <your@email.com>
+ * Copyright 2020 by Murray Wood at Digital Penguin - https://www.digitalpenguin.hk
  *
  * This file is meant to be used with Commerce by modmore. A valid Commerce license is required.
  *
