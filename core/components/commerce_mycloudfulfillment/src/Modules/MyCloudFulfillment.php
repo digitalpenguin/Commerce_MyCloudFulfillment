@@ -4,7 +4,6 @@ namespace DigitalPenguin\MyCloudFulfillment\Modules;
 use modmore\Commerce\Admin\Configuration\About\ComposerPackages;
 use modmore\Commerce\Admin\Sections\SimpleSection;
 use modmore\Commerce\Admin\Widgets\Form\CheckboxField;
-use modmore\Commerce\Admin\Widgets\Form\DescriptionField;
 use modmore\Commerce\Admin\Widgets\Form\PasswordField;
 use modmore\Commerce\Admin\Widgets\Form\SectionField;
 use modmore\Commerce\Admin\Widgets\Form\TextField;
@@ -38,9 +37,9 @@ class MyCloudFulfillment extends BaseModule {
         $this->adapter->loadLexicon('commerce_mycloudfulfillment:default');
 
         // Add the xPDO package, so Commerce can detect the derivative classes
-//        $root = dirname(__DIR__, 2);
-//        $path = $root . '/model/';
-//        $this->adapter->loadPackage('commerce_mycloudfulfillment', $path);
+        $root = dirname(__DIR__, 2);
+        $path = $root . '/model/';
+        $this->adapter->loadPackage('commerce_mycloudfulfillment', $path);
 
         // Add template path to twig
 //        $root = dirname(__DIR__, 2);
