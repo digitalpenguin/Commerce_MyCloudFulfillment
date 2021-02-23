@@ -9,6 +9,7 @@ use modmore\Commerce\Admin\Widgets\Form\PasswordField;
 use modmore\Commerce\Admin\Widgets\Form\SectionField;
 use modmore\Commerce\Admin\Widgets\Form\TextField;
 use modmore\Commerce\Events\Admin\PageEvent;
+use modmore\Commerce\Events\OrderStatus;
 use modmore\Commerce\Modules\BaseModule;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -44,9 +45,54 @@ class MyCloudFulfillment extends BaseModule {
 
         // Add composer libraries to the about section (v0.12+)
         //$dispatcher->addListener(\Commerce::EVENT_DASHBOARD_LOAD_ABOUT, [$this, 'addLibrariesToAbout']);
+
+        $dispatcher->addListener(\Commerce::EVENT_ORDER_AFTER_STATUS_CHANGE, [$this, 'checkStatusChange']);
     }
 
-    public function getModuleConfiguration(\comModule $module)
+    /**
+     * @param OrderStatus $orderStatus
+     */
+    public function checkStatusChange(OrderStatus $orderStatus) : void
+    {
+        // Check that after status change, status is now "Received".
+        if($orderStatus->getNewStatus()->get('name') !== 'Received') return;
+
+        $order = $orderStatus->getOrder();
+        $shipments = $order->getShipments();
+        if(empty($shipments)) return;
+
+        $orderItems = [];
+        foreach($shipments as $shipment) {
+            // Make sure shipping method is of \MyCloudFulfillmentShippingMethod type.
+            if($shipment->getShippingMethod() instanceof \MyCloudFulfillmentShippingMethod) {
+                $items = $shipment->getItems();
+                if(!empty($items)) {
+                    foreach($items as $item) {
+                        $orderItems[] = $item;
+                    }
+                }
+
+            }
+        }
+
+        if(!empty($orderItems)) {
+            $success = $this->sendFulfillmentOrder($orderItems);
+        }
+    }
+
+    /**
+     * @param $items
+     */
+    public function sendFulfillmentOrder($items) : bool
+    {
+        return true;
+    }
+
+    /**
+     * @param \comModule $module
+     * @return array
+     */
+    public function getModuleConfiguration(\comModule $module) : array
     {
         // Test API token
         if(in_array($module->getProperty('usetestaccount'), [1, true, 'on'])) {

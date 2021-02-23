@@ -10,6 +10,10 @@ class APIClient {
     private $client;
     private $baseUri;
 
+    /**
+     * APIClient constructor.
+     * @param bool $testMode
+     */
     public function __construct(bool $testMode = false) {
         $this->baseUri = $testMode === false ? 'https://api.mycloudfulfillment.com/api/v1/' : 'https://testaws-api.mycloudfulfillment.com/api/v1/';
         $this->client = new Client([
@@ -20,6 +24,11 @@ class APIClient {
         ]);
     }
 
+    /**
+     * @param string $apiKey
+     * @param string $secretKey
+     * @return Response
+     */
     public function authenticate(string $apiKey, string $secretKey) {
         try {
             $response = $this->client->request('POST', 'gettoken',[
@@ -49,7 +58,8 @@ class APIClient {
         try {
             $response = $this->client->request($method, $resource, [
                 'headers' => [
-                    'Authorization: Bearer ' . $authToken
+                    // Required header format for authToken. "Authorization: Bearer [token]"
+                    'Authorization' => 'Bearer ' . $authToken
                 ],
                 'json' => $data,
             ]);
