@@ -61,30 +61,93 @@ class MyCloudFulfillment extends BaseModule {
         $shipments = $order->getShipments();
         if(empty($shipments)) return;
 
-        $orderItems = [];
+        // It's possible that different items will use different shipping methods, so group them into "fulfillmentOrders".
+        $fulfillmentOrders = [];
         foreach($shipments as $shipment) {
             // Make sure shipping method is of \MyCloudFulfillmentShippingMethod type.
-            if($shipment->getShippingMethod() instanceof \MyCloudFulfillmentShippingMethod) {
+            $shippingMethod = $shipment->getShippingMethod();
+            if($shippingMethod instanceof \MyCloudFulfillmentShippingMethod) {
+                $deliveryModeId = $shippingMethod->getProperty('mcfshippingid');
                 $items = $shipment->getItems();
+                $fulfillmentOrders[$deliveryModeId]['id'] = $deliveryModeId;
                 if(!empty($items)) {
                     foreach($items as $item) {
-                        $orderItems[] = $item;
+                        $fulfillmentOrders[$deliveryModeId]['items'][] = $item;
                     }
                 }
-
             }
         }
 
-        if(!empty($orderItems)) {
-            $success = $this->sendFulfillmentOrder($orderItems);
+        if(!empty($fulfillmentOrders)) {
+            $success = $this->sendFulfillmentRequest($order, $fulfillmentOrders);
         }
     }
 
     /**
-     * @param $items
+     * @param $order
+     * @param $fulfillmentOrders
+     * @return bool
      */
-    public function sendFulfillmentOrder($items) : bool
+    public function sendFulfillmentRequest(\comOrder $order, array $fulfillmentOrders) : bool
     {
+        $apiKey = $this->getConfig('liveapikey');
+        $secretKey = $this->getConfig('livesecretkey');
+
+        // Test API token
+        if(in_array($this->getConfig('usetestaccount'), [1, true, 'on']) && $this->commerce->isTestMode()) {
+            $apiClient = new APIClient(true);
+            $apiKey = $this->getConfig('testapikey');
+            $secretKey = $this->getConfig('testsecretkey');
+        } else {
+            $apiClient = new APIClient();
+        }
+
+        // Authenticate with API and retrieve token
+        $response = $apiClient->authenticate($apiKey,$secretKey);
+        $data = $response->getData();
+        $this->commerce->modx->log(MODX_LOG_LEVEL_DEBUG,print_r($data,true));
+
+        // Get customer details
+        $address = $order->getAddress('shipping');
+        // Concatenate shipping address
+        $shippingAddress = $address->get('address1') . ' ' . $address->get('address2') . ' ' . $address->get('city') .
+        ' ' . $address->get('state') . ' ' . $address->get('country');
+
+        // Prepare payload(s) for request
+        $splitOrder = count($fulfillmentOrders);
+        $idx = 1;
+        foreach($fulfillmentOrders as $fulfillmentOrder) {
+            $payload = [
+                'delivery_mode_id'  =>  $fulfillmentOrder['id'],
+                'status'            =>  'APPROVED',
+                'name'              =>  $address->get('fullname'),
+                'address'           =>  $shippingAddress,
+                'postcode'          =>  $address->get('zip'),
+                'phone_number'      =>  $address->get('phone'),
+                'order_number'      =>  $splitOrder > 1 ? $order->get('id').'-'.$idx : $order->get('id')
+            ];
+
+            $items = [];
+            foreach($fulfillmentOrder['items'] as $item) {
+                $items[] = [
+                    'product_id'    => $item->get('sku'),
+                    'quantity'      => $item->get('quantity'),
+                    'price'         => $item->getTotal()
+                ];
+            }
+            $payload['items'] = array_values($items);
+            $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR, print_r($payload, true));
+
+            $response = $apiClient->request('orders',$data['token'],$payload);
+            $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($response->getData(),true));
+            $idx++;
+        }
+
+
+
+
+
+
         return true;
     }
 
@@ -94,20 +157,6 @@ class MyCloudFulfillment extends BaseModule {
      */
     public function getModuleConfiguration(\comModule $module) : array
     {
-        // Test API token
-        if(in_array($module->getProperty('usetestaccount'), [1, true, 'on'])) {
-            $apiClient = new APIClient($this->commerce->isTestMode());
-        } else {
-            $apiClient = new APIClient();
-        }
-
-        $response = $apiClient->authenticate($module->getProperty('liveapikey'),$module->getProperty('livesecretkey'));
-        $data = $response->getData();
-
-        $this->commerce->modx->log(1,print_r($data,true));
-
-        //$apiClient->request('/orders')$data['token'];
-
         $fields = [];
 
         $fields[] = new SectionField($this->commerce, [
