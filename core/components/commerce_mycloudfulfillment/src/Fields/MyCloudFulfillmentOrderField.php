@@ -4,10 +4,10 @@ use modmore\Commerce\Exceptions\ViewException;
 use modmore\Commerce\Order\Field\AbstractField;
 
 /**
- * Class MailChimpSubscriptionField
+ * Class MyCloudFulfillmentOrderField
  *
- * Renders a view of the subscribed MailChimp user.
- * @package modmore\Commerce_MailChimp\Fields
+ * Renders a view of the MyCloudFulfillment OrderField
+ * @package DigitalPenguin\MyCloudFulfillment\Fields
  */
 class MyCloudFulfillmentOrderField extends AbstractField {
 
