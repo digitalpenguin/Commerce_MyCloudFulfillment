@@ -2,6 +2,7 @@
 namespace DigitalPenguin\MyCloudFulfillment\Modules;
 
 use DigitalPenguin\MyCloudFulfillment\API\APIClient;
+use DigitalPenguin\MyCloudFulfillment\Fields\MyCloudFulfillmentOrderField;
 use modmore\Commerce\Admin\Configuration\About\ComposerPackages;
 use modmore\Commerce\Admin\Sections\SimpleSection;
 use modmore\Commerce\Admin\Widgets\Form\CheckboxField;
@@ -11,6 +12,7 @@ use modmore\Commerce\Admin\Widgets\Form\TextField;
 use modmore\Commerce\Events\Admin\PageEvent;
 use modmore\Commerce\Events\OrderStatus;
 use modmore\Commerce\Modules\BaseModule;
+use modmore\Commerce\Order\Field\Text;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -43,9 +45,11 @@ class MyCloudFulfillment extends BaseModule {
         $path = $root . '/model/';
         $this->adapter->loadPackage('commerce_mycloudfulfillment', $path);
 
-        // Add composer libraries to the about section (v0.12+)
-        //$dispatcher->addListener(\Commerce::EVENT_DASHBOARD_LOAD_ABOUT, [$this, 'addLibrariesToAbout']);
+        // Add template path to twig
+        $root = dirname(__DIR__, 2);
+        $this->commerce->view()->addTemplatesPath($root . '/templates/');
 
+        // Events
         $dispatcher->addListener(\Commerce::EVENT_ORDER_AFTER_STATUS_CHANGE, [$this, 'checkStatusChange']);
     }
 
@@ -70,6 +74,7 @@ class MyCloudFulfillment extends BaseModule {
                 $deliveryModeId = $shippingMethod->getProperty('mcfshippingid');
                 $items = $shipment->getItems();
                 $fulfillmentOrders[$deliveryModeId]['id'] = $deliveryModeId;
+                $fulfillmentOrders[$deliveryModeId]['shipment_id'] = $shipment->get('id');
                 if(!empty($items)) {
                     foreach($items as $item) {
                         $fulfillmentOrders[$deliveryModeId]['items'][] = $item;
@@ -79,21 +84,20 @@ class MyCloudFulfillment extends BaseModule {
         }
 
         if(!empty($fulfillmentOrders)) {
-            $success = $this->sendFulfillmentRequest($order, $fulfillmentOrders);
+            $this->sendFulfillmentRequest($order, $fulfillmentOrders);
         }
     }
 
     /**
-     * @param $order
-     * @param $fulfillmentOrders
-     * @return bool
+     * @param \comOrder $order
+     * @param array $fulfillmentOrders
      */
-    public function sendFulfillmentRequest(\comOrder $order, array $fulfillmentOrders) : bool
+    public function sendFulfillmentRequest(\comOrder $order, array $fulfillmentOrders) : void
     {
         $apiKey = $this->getConfig('liveapikey');
         $secretKey = $this->getConfig('livesecretkey');
 
-        // Test API token
+        // Determine if we should use test API credentials or not
         if(in_array($this->getConfig('usetestaccount'), [1, true, 'on']) && $this->commerce->isTestMode()) {
             $apiClient = new APIClient(true);
             $apiKey = $this->getConfig('testapikey');
@@ -114,8 +118,6 @@ class MyCloudFulfillment extends BaseModule {
         ' ' . $address->get('state') . ' ' . $address->get('country');
 
         // Prepare payload(s) for request
-        $splitOrder = count($fulfillmentOrders);
-        $idx = 1;
         foreach($fulfillmentOrders as $fulfillmentOrder) {
             $payload = [
                 'delivery_mode_id'  =>  $fulfillmentOrder['id'],
@@ -124,7 +126,7 @@ class MyCloudFulfillment extends BaseModule {
                 'address'           =>  $shippingAddress,
                 'postcode'          =>  $address->get('zip'),
                 'phone_number'      =>  $address->get('phone'),
-                'order_number'      =>  $splitOrder > 1 ? $order->get('id').'-'.$idx : $order->get('id')
+                'order_number'      =>  $order->get('id').'-'.$fulfillmentOrder['shipment_id']
             ];
 
             $items = [];
@@ -132,24 +134,33 @@ class MyCloudFulfillment extends BaseModule {
                 $items[] = [
                     'product_id'    => $item->get('sku'),
                     'quantity'      => $item->get('quantity'),
-                    'price'         => $item->getTotal()
+                    'price'         => $item->get('total')
                 ];
             }
-            $payload['items'] = array_values($items);
-            $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR, print_r($payload, true));
+            $payload['order_items'] = array_values($items);
+            $this->commerce->modx->log(MODX_LOG_LEVEL_DEBUG, print_r($payload, true));
 
             $response = $apiClient->request('orders',$data['token'],$payload);
-            $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($response->getData(),true));
-            $idx++;
+            $responseData = $response->getData();
+            $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($responseData,true));
+
+            // Check result in the response and create the appropriate order fields
+            if($responseData['success']) {
+                $this->createOrderField(true, $order, $fulfillmentOrder['shipment_id'], $responseData);
+            }
         }
-
-
-
-
-
-
-        return true;
     }
+
+    public function createOrderField(bool $success, \comOrder $order, int $shipmentId, array $responseData) {
+        if($success) {
+            $field = new MyCloudFulfillmentOrderField($this->commerce, 'order_field', true);
+        } else {
+            // Add a plain text field showing the customer is not subscribed.
+            $field = new Text($this->commerce, 'order_field', $this->adapter->lexicon('commerce_mycloudfulfillment.order_field.value.not_sent'));
+        }
+        $order->setOrderField($field);
+    }
+
 
     /**
      * @param \comModule $module

@@ -20,3 +20,5 @@ When enabled, the test account details will only be available when Commerce is i
 $_lang['commerce_mycloudfulfillment.shipping_id'] = 'MyCloud Fulfillment Shipping ID#';
 $_lang['commerce_mycloudfulfillment.shipping_id_desc'] = 'Add the Shipping ID from the MyCloud Fulfillment dashboard here. Can be viewed on Set up > Delivery Cost Page';
 
+$_lang['commerce.order_field'] = 'MyCloudFulfillment';
+$_lang['commerce_mycloudfulfillment.order_field.value.not_sent'] = 'Order NOT sent to fulfillment.';

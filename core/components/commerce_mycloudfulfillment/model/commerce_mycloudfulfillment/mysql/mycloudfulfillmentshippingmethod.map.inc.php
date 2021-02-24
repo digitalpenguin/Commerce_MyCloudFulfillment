@@ -2,7 +2,7 @@
 /**
  * MyCloudFulfillment for Commerce.
  *
- * Copyright 2020 by Murray Wood at Digital Penguin - https://www.digitalpenguin.hk
+ * Copyright 2020 by Your Name <your@email.com>
  *
  * This file is meant to be used with Commerce by modmore. A valid Commerce license is required.
  *
