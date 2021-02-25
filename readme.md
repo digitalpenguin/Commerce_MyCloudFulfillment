@@ -1,15 +1,15 @@
-#MyCloudFulfillment Integration for Commerce on MODX CMS
+# MyCloudFulfillment Integration for Commerce on MODX CMS
 Development by Murray Wood at Digital Penguin.
 
 **Thanks to Inside Creative for sponsoring the development of this module.
 
-##Requirements
+## Requirements
 Commerce_MyCloudFulfillment requires at least MODX 2.6.5 and PHP 7.1 or higher. Commerce by modmore should be at least version 1.1.4. You also need to have an MyCloudFulfillment account which provides an api key and a secret key.
 
-##Installation
+## Installation
 Install via the MODX package manager. The package name is Commerce_MyCloudFulfillment.
 
-##Introduction
+## Introduction
 This Commerce module introduces a custom shipping method called "MyCloudFulfillment Shipping Method".
 When a customer pays for an order using this shipping method, the order details are sent to MyCloudFulfillment to start the delivery process.
 
@@ -19,7 +19,7 @@ There are also details including the mycloud id and tracking url on each order s
 This module also includes a webhook that can be set up so when a shipment is being readied or delivered, 
 MyCloudFulfillment can update the order status in Commerce automatically.
 
-##Setup
+## Setup
 - Enable the module: In the MODX manager, open Commerce then go to `Configuration` -> `Modules`.
 Find Commerce_MyCloudFulfillment in the list and enable it for test and live modes.
   
