@@ -149,19 +149,6 @@ class MyCloudFulfillment extends BaseModule {
             $responseData = $response->getData();
             $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($responseData,true));
 
-            // dummy response data
-            /*$responseData = [
-                'success'   =>  true,
-                "message"   => "Order successfully saved. Order ID=547962",
-                "data"      =>  [
-                    "attributes" => [
-                        'id'            =>  '1234',
-                        "mc_number"     =>  "MC190705766",
-                        'bitly_url'     =>  'http://bit.ly/306Mn5B'
-                    ]
-                ],
-            ];*/
-
             // Check result in the response and create the appropriate order fields
             if($responseData['success']) {
                 $this->createOrderField(true, $order);

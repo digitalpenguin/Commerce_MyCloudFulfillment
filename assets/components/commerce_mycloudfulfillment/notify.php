@@ -3,7 +3,6 @@
 use DigitalPenguin\MyCloudFulfillment\Webhook\Handler;
 
 define('MODX_REQP',false);
-$_REQUEST['ctx'] = 'web';
 
 require_once dirname(dirname(dirname(dirname(__FILE__)))) . '/config.core.php';
 require_once MODX_CORE_PATH . 'config/' . MODX_CONFIG_KEY . '.inc.php';
@@ -19,7 +18,8 @@ $commerce = new Commerce($modx, array(
 $modx->lexicon->load('commerce:default');
 
 $handler = new Handler($commerce);
-$response = $handler->handle($_REQUEST);
+$data = json_decode(file_get_contents('php://input'), true);
+$response = $handler->handle($data);
 http_response_code($response->getResponseCode());
 echo $response->getResponse();
 
