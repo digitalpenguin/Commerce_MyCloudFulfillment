@@ -5,4 +5,8 @@ $xpdo_meta_map = array (
   array (
     0 => 'MyCloudFulfillmentShippingMethod',
   ),
+  'comOrderShipment' => 
+  array (
+    0 => 'MyCloudFulfillmentOrderShipment',
+  ),
 );

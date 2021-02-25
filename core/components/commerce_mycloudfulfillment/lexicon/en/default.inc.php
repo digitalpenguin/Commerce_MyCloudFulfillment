@@ -21,4 +21,6 @@ $_lang['commerce_mycloudfulfillment.shipping_id'] = 'MyCloud Fulfillment Shippin
 $_lang['commerce_mycloudfulfillment.shipping_id_desc'] = 'Add the Shipping ID from the MyCloud Fulfillment dashboard here. Can be viewed on Set up > Delivery Cost Page';
 
 $_lang['commerce.order_field'] = 'MyCloudFulfillment';
+$_lang['commerce_mycloudfulfillment.order_field.description'] = 'MyCloudFulfillment:';
+$_lang['commerce_mycloudfulfillment.order_field.fulfillment_link'] = 'View Fulfillment Orders';
 $_lang['commerce_mycloudfulfillment.order_field.value.not_sent'] = 'Order NOT sent to fulfillment.';

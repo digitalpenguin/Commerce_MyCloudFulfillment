@@ -68,13 +68,18 @@ class MyCloudFulfillment extends BaseModule {
         // It's possible that different items will use different shipping methods, so group them into "fulfillmentOrders".
         $fulfillmentOrders = [];
         foreach($shipments as $shipment) {
+            // Change shipment class_key to custom \MyCloudFulfillmentOrderShipment
+            $shipment->set('class_key','MyCloudFulfillmentOrderShipment');
+            $shipment->save();
+
             // Make sure shipping method is of \MyCloudFulfillmentShippingMethod type.
             $shippingMethod = $shipment->getShippingMethod();
             if($shippingMethod instanceof \MyCloudFulfillmentShippingMethod) {
                 $deliveryModeId = $shippingMethod->getProperty('mcfshippingid');
                 $items = $shipment->getItems();
                 $fulfillmentOrders[$deliveryModeId]['id'] = $deliveryModeId;
-                $fulfillmentOrders[$deliveryModeId]['shipment_id'] = $shipment->get('id');
+                $fulfillmentOrders[$deliveryModeId]['shipment'] = $shipment;
+
                 if(!empty($items)) {
                     foreach($items as $item) {
                         $fulfillmentOrders[$deliveryModeId]['items'][] = $item;
@@ -126,7 +131,7 @@ class MyCloudFulfillment extends BaseModule {
                 'address'           =>  $shippingAddress,
                 'postcode'          =>  $address->get('zip'),
                 'phone_number'      =>  $address->get('phone'),
-                'order_number'      =>  $order->get('id').'-'.$fulfillmentOrder['shipment_id']
+                'order_number'      =>  $order->get('id').'-'.$fulfillmentOrder['shipment']->get('id')
             ];
 
             $items = [];
@@ -134,7 +139,7 @@ class MyCloudFulfillment extends BaseModule {
                 $items[] = [
                     'product_id'    => $item->get('sku'),
                     'quantity'      => $item->get('quantity'),
-                    'price'         => $item->get('total')
+                    'price'         => $item->get('total') / 100 // divide so subunits are seen as such
                 ];
             }
             $payload['order_items'] = array_values($items);
@@ -144,21 +149,51 @@ class MyCloudFulfillment extends BaseModule {
             $responseData = $response->getData();
             $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($responseData,true));
 
+            // dummy response data
+            /*$responseData = [
+                'success'   =>  true,
+                "message"   => "Order successfully saved. Order ID=547962",
+                "data"      =>  [
+                    "attributes" => [
+                        'id'            =>  '1234',
+                        "mc_number"     =>  "MC190705766",
+                        'bitly_url'     =>  'http://bit.ly/306Mn5B'
+                    ]
+                ],
+            ];*/
+
             // Check result in the response and create the appropriate order fields
             if($responseData['success']) {
-                $this->createOrderField(true, $order, $fulfillmentOrder['shipment_id'], $responseData);
+                $this->createOrderField(true, $order);
+                $this->createShipmentFields($fulfillmentOrder, $responseData);
             }
         }
     }
 
-    public function createOrderField(bool $success, \comOrder $order, int $shipmentId, array $responseData) {
+    /**
+     * @param bool $success
+     * @param \comOrder $order
+     */
+    public function createOrderField(bool $success, \comOrder $order) {
         if($success) {
-            $field = new MyCloudFulfillmentOrderField($this->commerce, 'order_field', true);
+            $field = new MyCloudFulfillmentOrderField($this->commerce, 'order_field', 'https://system.mycloudfulfillment.com/mcl/delivery');
         } else {
             // Add a plain text field showing the customer is not subscribed.
             $field = new Text($this->commerce, 'order_field', $this->adapter->lexicon('commerce_mycloudfulfillment.order_field.value.not_sent'));
         }
         $order->setOrderField($field);
+    }
+
+    /**
+     * @param $fulfillmentOrder
+     * @param $responseData
+     */
+    public function createShipmentFields($fulfillmentOrder, $responseData) {
+        $shipment = $fulfillmentOrder['shipment'];
+        $shipment->setProperty('mc_number',$responseData['data']['attributes']['mc_number']);
+        $shipment->setProperty('tracking_url',$responseData['data']['attributes']['bitly_url']);
+
+        $shipment->save();
     }
 
 

@@ -1,5 +1,5 @@
 <?php
-require_once strtr(realpath(dirname(dirname(__FILE__))), '\\', '/') . '/mycloudfulfillmentshippingmethod.class.php';
+require_once strtr(realpath(dirname(dirname(__FILE__))), '\\', '/') . '/mycloudfulfillmentordershipment.class.php';
 /**
  * MyCloudFulfillment for Commerce.
  *
@@ -10,7 +10,7 @@ require_once strtr(realpath(dirname(dirname(__FILE__))), '\\', '/') . '/mycloudf
  * @package commerce_mycloudfulfillment
  * @license See core/components/commerce_mycloudfulfillment/docs/license.txt
  */
-class MyCloudFulfillmentShippingMethod_mysql extends MyCloudFulfillmentShippingMethod
+class MyCloudFulfillmentOrderShipment_mysql extends MyCloudFulfillmentOrderShipment
 {
 
 }
