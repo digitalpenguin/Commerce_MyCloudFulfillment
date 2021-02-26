@@ -34,6 +34,8 @@ Create as many shipping methods as you like but to use this module you need to s
   This custom shipping method type has an extra field at the bottom called `MyCloud Fulfillment Shipping ID#`.
   Get this number from your MyCloudFulfillment account.
   
+- Set up products: Your products listed in the MyCloudFulfillment portal should share the same
+SKU as your products in Commerce and have enough stock available.
 
 - Set up statuses: The following statuses will be sent from the API `PACKED`, `INPROGRESS`, `SHIPPED`, `DELIVERED`
 You should set up statuses with the same names in that order. The webhook will then process the status changes when it's notified.
