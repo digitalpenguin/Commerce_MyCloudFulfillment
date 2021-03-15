@@ -58,8 +58,10 @@ class MyCloudFulfillment extends BaseModule {
      */
     public function checkStatusChange(OrderStatus $orderStatus) : void
     {
-        // Check that after status change, status is now "Received".
-        if($orderStatus->getNewStatus()->get('name') !== 'Received') return;
+        // Make sure that this only runs when the state changes from 'draft' to 'processing'.
+        $oldState = $orderStatus->getOldStatus()->getState();
+        $newState = $orderStatus->getNewStatus()->getState();
+        if($oldState !== 'draft' && $newState !== 'processing') return;
 
         $order = $orderStatus->getOrder();
         $shipments = $order->getShipments();
@@ -149,7 +151,7 @@ class MyCloudFulfillment extends BaseModule {
 
             $response = $apiClient->request('orders',$data['token'],$payload);
             $responseData = $response->getData();
-            $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($responseData,true));
+            $this->commerce->modx->log(MODX_LOG_LEVEL_DEBUG,print_r($responseData,true));
 
             // Check result in the response and create the appropriate order fields
             if($responseData['success']) {
@@ -198,6 +200,13 @@ class MyCloudFulfillment extends BaseModule {
             'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.use_test_account'),
             'description' => $this->adapter->lexicon('commerce_mycloudfulfillment.use_test_account.description'),
         ]);
+        // Checkbox to enable test account keys and endpoints
+        $fields[] = new CheckboxField($this->commerce, [
+            'name' => 'properties[usetestaccount]',
+            'label' => $this->adapter->lexicon('commerce_mycloudfulfillment.use_test_account'),
+            'value' => $module->getProperty('usetestaccount', '')
+        ]);
+
         // Checkbox to enable test account keys and endpoints
         $fields[] = new CheckboxField($this->commerce, [
             'name' => 'properties[usetestaccount]',

@@ -1,4 +1,7 @@
 <?php
+
+use DigitalPenguin\MyCloudFulfillment\Modules\MyCloudFulfillment;
+
 /**
  * MyCloudFulfillment for Commerce.
  *
@@ -33,5 +36,4 @@ class MyCloudFulfillmentOrderShipment extends comOrderShipment
             ]
         ];
     }
-
 }
