@@ -136,10 +136,12 @@ class MyCloudFulfillment extends BaseModule {
 
             $items = [];
             foreach($fulfillmentOrder['items'] as $item) {
+                // Determine total price for item based on quantity as the API *DOES NOT* take this into account.
+                $itemPrice = $item->get('quantity') * ( $item->get('total') / 100 ); // divide so subunits are seen as such
                 $items[] = [
                     'product_id'    => $item->get('sku'),
                     'quantity'      => $item->get('quantity'),
-                    'price'         => $item->get('total') / 100 // divide so subunits are seen as such
+                    'price'         => $itemPrice
                 ];
             }
             $payload['order_items'] = array_values($items);
