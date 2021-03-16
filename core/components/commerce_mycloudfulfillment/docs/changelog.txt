@@ -1,3 +1,10 @@
+MyCloudFulfillment for Commerce 1.0.0-rc2
+---------------------------------
+Released on 16/03/2021
+
+- Changed how item pricing is sent to API
+- Fixed assets not being packaged
+
 MyCloudFulfillment for Commerce 1.0.0-rc1
 ---------------------------------
 Released on 25/02/2021
