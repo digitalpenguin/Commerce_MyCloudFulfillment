@@ -26,7 +26,7 @@ class Handler {
 
     public function handle(array $rawData): Response
     {
-        $this->commerce->modx->log(MODX_LOG_LEVEL_ERROR,print_r($rawData,true));
+        $this->commerce->modx->log(MODX_LOG_LEVEL_INFO,print_r($rawData,true));
         $acceptedStatus = [
             'PACKED',
             'INPROGRESS',
