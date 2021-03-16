@@ -10,6 +10,7 @@ use modmore\Commerce\Admin\Widgets\Form\PasswordField;
 use modmore\Commerce\Admin\Widgets\Form\SectionField;
 use modmore\Commerce\Admin\Widgets\Form\TextField;
 use modmore\Commerce\Events\Admin\PageEvent;
+use modmore\Commerce\Events\OrderState;
 use modmore\Commerce\Events\OrderStatus;
 use modmore\Commerce\Modules\BaseModule;
 use modmore\Commerce\Order\Field\Text;
@@ -50,33 +51,30 @@ class MyCloudFulfillment extends BaseModule {
         $this->commerce->view()->addTemplatesPath($root . '/templates/');
 
         // Events
-        $dispatcher->addListener(\Commerce::EVENT_ORDER_AFTER_STATUS_CHANGE, [$this, 'checkStatusChange']);
+        $dispatcher->addListener(\Commerce::EVENT_STATE_CART_TO_PROCESSING, [$this, 'checkStatusChange']);
     }
 
     /**
      * @param OrderStatus $orderStatus
      */
-    public function checkStatusChange(OrderStatus $orderStatus) : void
+    public function checkStatusChange(OrderState $orderState) : void
     {
-        // Make sure that this only runs when the state changes from 'draft' to 'processing'.
-        $oldState = $orderStatus->getOldStatus()->getState();
-        $newState = $orderStatus->getNewStatus()->getState();
-        if($oldState !== 'draft' && $newState !== 'processing') return;
-
-        $order = $orderStatus->getOrder();
+        $order = $orderState->getOrder();
         $shipments = $order->getShipments();
         if(empty($shipments)) return;
 
         // It's possible that different items will use different shipping methods, so group them into "fulfillmentOrders".
         $fulfillmentOrders = [];
         foreach($shipments as $shipment) {
-            // Change shipment class_key to custom \MyCloudFulfillmentOrderShipment
-            $shipment->set('class_key','MyCloudFulfillmentOrderShipment');
-            $shipment->save();
 
             // Make sure shipping method is of \MyCloudFulfillmentShippingMethod type.
             $shippingMethod = $shipment->getShippingMethod();
             if($shippingMethod instanceof \MyCloudFulfillmentShippingMethod) {
+
+                // Change shipment class_key to custom \MyCloudFulfillmentOrderShipment
+                $shipment->set('class_key','MyCloudFulfillmentOrderShipment');
+                $shipment->save();
+
                 $deliveryModeId = $shippingMethod->getProperty('mcfshippingid');
                 $items = $shipment->getItems();
                 $fulfillmentOrders[$deliveryModeId]['id'] = $deliveryModeId;
@@ -136,16 +134,20 @@ class MyCloudFulfillment extends BaseModule {
                 'order_number'      =>  $order->get('id').'-'.$fulfillmentOrder['shipment']->get('id')
             ];
 
+            // WARNING!
+            // Quantity does not work as expected with this API.
+            // Be sure to use price instead of item total for each item, or it will multiply again.
             $items = [];
+            $totalPrice = 0;
             foreach($fulfillmentOrder['items'] as $item) {
-                // Determine total price for item based on quantity as the API *DOES NOT* take this into account.
-                $itemPrice = $item->get('quantity') * ( $item->get('total') / 100 ); // divide so subunits are seen as such
+                $totalPrice += $item->get('total');
                 $items[] = [
                     'product_id'    => $item->get('sku'),
                     'quantity'      => $item->get('quantity'),
-                    'price'         => $itemPrice
+                    'price'         => round(($item->get('price') / 100 ),2)
                 ];
             }
+            $payload['total_price'] = round(($totalPrice / 100), 2);
             $payload['order_items'] = array_values($items);
             $this->commerce->modx->log(MODX_LOG_LEVEL_DEBUG, print_r($payload, true));
 
