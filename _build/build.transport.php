@@ -24,7 +24,7 @@ if (!defined('MOREPROVIDER_BUILD')) {
     define('PKG_NAME', 'Commerce_MyCloudFulfillment');
     define('PKG_NAMESPACE', 'commerce_mycloudfulfillment');
     define('PKG_VERSION', '1.0.0');
-    define('PKG_RELEASE', 'rc2');
+    define('PKG_RELEASE', 'pl');
 
     /* load modx */
     require_once dirname(__DIR__) . '/config.core.php';
